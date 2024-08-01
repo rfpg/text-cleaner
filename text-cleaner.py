@@ -5,9 +5,8 @@ file_path = 'file.txt'
 # Path for the cleaned output
 output_path = 'cleaned_file.txt'
 
-# Define a function to determine if a line starts with a timestamp
-def starts_with_timestamp(line):
-    return re.match(r'\d{2}:\d{2}:\d{2};\d{2}\s*\d{2}:\d{2}:\d{2};\d{2}', line)
+def is_timestamp(line):
+    return bool(re.match(r'\d{2}:\d{2}:\d{2};\d{2}\s*\d{2}:\d{2}:\d{2};\d{2}', line))
 
 # Read the original file
 with open(file_path, 'r') as file:
@@ -16,22 +15,32 @@ with open(file_path, 'r') as file:
 # Split into lines and process each line
 cleaned_text = ''
 lines = text.split('\n')
+for line in lines:
+    line = line.strip()
+    # Remove all ">>" and ">> " before further processing
+    line = re.sub(r'>>\s*', '', line)
 
-for i in range(len(lines)):
-    # Remove ">>" and extra whitespace from the line first
-    line = re.sub(r'>>', '', lines[i])
-    line = re.sub(r'\s+', ' ', line).strip()
+    # Check if the line starts with a timestamp
+    if is_timestamp(line):
+        # Split the timestamp from the rest of the line
+        parts = re.split(r'(\d{2}:\d{2}:\d{2};\d{2}\s*\d{2}:\d{2}:\d{2};\d{2})', line, 1)
+        timestamp = parts[1]
+        text_part = parts[2].strip()
 
-    if starts_with_timestamp(line):
-        # Start a new line with a timestamp, unless it's the very first line
-        if cleaned_text:
-            cleaned_text += '\n'
-        cleaned_text += line
+        # Check if the text part starts with a lowercase letter
+        if text_part and text_part[0].islower():
+            # Skip adding this timestamp and its text part
+            continue
+
+        # Add the timestamp and the text part on separate lines, followed by an extra newline
+        cleaned_text += timestamp + '\n\n' + text_part + '\n\n'
     else:
-        # Continue on the same line if there's no timestamp
-        cleaned_text += ' ' + line
+        # This handles lines that don't start with a timestamp, appending them to the last text
+        if cleaned_text.endswith('\n\n'):
+            cleaned_text = cleaned_text.rstrip('\n\n') + ' '
+        cleaned_text += line + '\n\n'
 
-# Ensure no leading/trailing spaces
+# Ensure no trailing newlines
 cleaned_text = cleaned_text.strip()
 
 # Write the cleaned text to a new file
