@@ -19,5 +19,4 @@ To run the script, you will need to use a Python environment. You can execute th
 ```bash
 cd ~/text-cleaner
 
-```bash
 python text-cleaner.py
